@@ -1,0 +1,44 @@
+<html>
+<head>
+</head>
+<body>
+
+<h1>Welcome {{username}}</h1> 
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+Here are the photos shared with you:
+
+<table>
+	<th>pID</th>
+	<th>postingDate</th>
+	<th>poster's first name</th>
+	<th>poster's last name</th>
+	<th>link</th>
+
+{% for line in posts %}
+	<tr>
+		<td>{{line.pID}}</td>
+		<td>{{line.postingDate}}</td>
+		<td>{{line.firstName}}</td>
+		<td>{{line.lastName}}</td>
+		<td><a href = "{{line.filePath}}"> LINK</td>
+	</tr>
+{% endfor %}
+</table>
+
+
+
+<a href="/post_photo">Post a new photo</a>
+<br>
+<a href="/createGroup">Create a friend group</a>
+<br>
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>
