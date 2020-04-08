@@ -16,5 +16,8 @@ For Part 3 of the project, we completed the following features:
     user can create friend groups. If the group has already been created, it will throw an  error massage "Error: This group already exists". Otherwise, the group will be created and Finstagram adds the creator as a group member.
     related function:create_group(),createAuth()
     
+5) registrate and log in
+    related functions:login(),register(),loginAuth(),registerAuth(). Note: the password will be hashed and stored in the database.
+    
     
 
