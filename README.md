@@ -8,7 +8,7 @@ For Part 3 of the project, we completed the following features:
     Note: tag and reactTo feature are not implemented. We will add these info later.
     related function: home()
      
-3)Post a photo
+3) Post a photo
     Instead asking the user to enter the location of a photo on the client computer, we let the user to choose file and upload it. Also, the user can decide whether the photo is visible to all followers and which group to share with. The file will be saved in a designated directory: static/ images/, with the pID as filename.
     related function: post(),post_photo()
     
