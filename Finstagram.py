@@ -42,7 +42,7 @@ def register():
 def loginAuth():
     #grabs information from the forms
     username = request.form['username']
-    password = request.form['password']
+    password = request.form['password']+SALT
     hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
 
     #cursor used to send queries
@@ -70,7 +70,7 @@ def loginAuth():
 def registerAuth():
     #grabs information from the forms
     username = request.form['username']
-    password = request.form['password']
+    password = request.form['password']+SALT
     hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
     fname = request.form['fname']
     lname = request.form['lname']
@@ -102,9 +102,9 @@ def home():
     user = session['username']
     cursor = conn.cursor();
 
-    query = 'SELECT postingDate, pID, firstName,lastName,filePath FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster)WHERE(ph.poster = %s)OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1)) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID))) ORDER BY postingDate DESC'
-
-    cursor.execute(query, (user, user, user))
+    # query = 'SELECT  postingDate, pID, firstName,lastName,filePath FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster)WHERE(ph.poster = %s)OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1)) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID))) ORDER BY postingDate DESC'
+    query = 'SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 UNION(SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))'
+    cursor.execute(query, (user, user))
 
     data = cursor.fetchall()
     # print(data)
@@ -200,7 +200,7 @@ def post():
 def post_photo():
     username = session['username']
     cursor = conn.cursor();
-    query = 'SELECT DISTINCT groupName, groupCreator FROM BelongTo WHERE groupCreator = %s'
+    query = 'SELECT DISTINCT groupName, groupCreator FROM BelongTo WHERE username = %s'
     cursor.execute(query,(username))
     groups = cursor.fetchall()
     cursor.close()
