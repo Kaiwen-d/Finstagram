@@ -99,7 +99,11 @@ def registerAuth():
 
 @app.route('/home')
 def home():
-    user = session['username']
+    try:
+        user = session['username']
+    except:
+        error = 'No session found. Please log in.'
+        return render_template('login.html', error=error)
     cursor = conn.cursor();
 
     # query = 'SELECT  postingDate, pID, firstName,lastName,filePath FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster)WHERE(ph.poster = %s)OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1)) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID))) ORDER BY postingDate DESC'
@@ -113,12 +117,22 @@ def home():
 
 @app.route('/createGroup')
 def create_group():
-    username = session['username']
+    try:
+        username = session['username']
+    except:
+        error = 'No session found. Please log in.'
+        return render_template('login.html', error=error)
+        
     return render_template('create_group.html')
 
 @app.route('/createAuth', methods=['GET', 'POST'])
 def createAuth():
-    username = session['username']
+    try:
+        username = session['username']
+    except:
+        error = 'No session found. Please log in.'
+        return render_template('login.html', error=error)
+
     groupName = request.form['groupName']
     description = request.form['description']
     #start curosr
@@ -150,7 +164,11 @@ def createAuth():
         
 @app.route('/post', methods=['GET', 'POST'])
 def post():
-    username = session['username']
+    try:
+        username = session['username']
+    except:
+        error = 'No session found. Please log in.'
+        return render_template('login.html', error=error)
     if request.method == 'POST':
         file = request.files['file']
         caption = request.form['caption']
@@ -198,7 +216,11 @@ def post():
 
 @app.route('/post_photo')
 def post_photo():
-    username = session['username']
+    try:
+        username = session['username']
+    except:
+        error = 'No session found. Please log in.'
+        return render_template('login.html', error=error)
     cursor = conn.cursor();
     query = 'SELECT DISTINCT groupName, groupCreator FROM BelongTo WHERE username = %s'
     cursor.execute(query,(username))
