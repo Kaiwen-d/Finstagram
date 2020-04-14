@@ -1,0 +1,36 @@
+<html>
+<head>
+</head>
+<body>
+
+Post your photo
+</br>
+
+<form action="/post" enctype="multipart/form-data" method="POST">
+	
+	<input type="file" name = "file" style="margin-top:20px;"/> </br>
+	<input type="text" name = "caption" placeholder="caption" > </br>
+Visible to all followers </br>
+	<input type="radio" name = "all_followers" value = "1"/>Yes </br>
+	<input type="radio" name = "all_followers" value = "0"/>No </br>
+	Choose the friend group(s) you want to share with.</br>
+
+	{% for line in groups %}
+	<input type="checkbox" name="shared_groups" value= "{{line.groupName}},{{line.groupCreator}}"/>{{line.groupName}} created by {{line.groupCreator}}</input>
+	<br>
+	{% endfor %}
+
+	<input type="submit" value = Post />
+</form>
+
+{% for message in get_flashed_messages() %}
+        <b>Error:</b>{{ message }}
+    {% endfor %}
+
+</br>
+<a href="/home">Goback</a>
+
+</body>
+
+
+</html>

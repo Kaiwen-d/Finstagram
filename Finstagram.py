@@ -6,8 +6,22 @@ import os
 import pymysql.cursors
 SALT = 'cs3083'
 ALLOWED_EXTENSIONS = set(['png','jpg','jpeg','gif','bmp'])
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_visible(username):
+    cursor = conn.cursor();
+
+    # query = 'SELECT  postingDate, pID, firstName,lastName,filePath FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster)WHERE(ph.poster = %s)OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1)) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID))) ORDER BY postingDate DESC'
+    query = 'SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 UNION (SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))ORDER BY postingDate DESC'
+    cursor.execute(query, (username, username))
+
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -100,29 +114,21 @@ def registerAuth():
 @app.route('/home')
 def home():
     try:
-        user = session['username']
+        username = session['username']
     except:
-        error = 'No session found. Please log in.'
+        error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
-    cursor = conn.cursor();
-
-    # query = 'SELECT  postingDate, pID, firstName,lastName,filePath FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster)WHERE(ph.poster = %s)OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1)) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID))) ORDER BY postingDate DESC'
-    query = 'SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 UNION (SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))ORDER BY postingDate DESC'
-    cursor.execute(query, (user, user))
-
-    data = cursor.fetchall()
-    # print(data)
-    cursor.close()
-    return render_template('home.html', username=user, posts=data)
+    data = get_visible(username)
+    return render_template('home.html', username=username, posts=data)
 
 @app.route('/createGroup')
 def create_group():
     try:
         username = session['username']
     except:
-        error = 'No session found. Please log in.'
+        error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
-        
+
     return render_template('create_group.html')
 
 @app.route('/createAuth', methods=['GET', 'POST'])
@@ -130,7 +136,7 @@ def createAuth():
     try:
         username = session['username']
     except:
-        error = 'No session found. Please log in.'
+        error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
 
     groupName = request.form['groupName']
@@ -167,7 +173,7 @@ def post():
     try:
         username = session['username']
     except:
-        error = 'No session found. Please log in.'
+        error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
     if request.method == 'POST':
         file = request.files['file']
@@ -210,7 +216,7 @@ def post():
             cursor.close()
             return redirect(url_for('home'))
         else:
-            flash('No file or filr type not supported')
+            flash('Error: No file or filr type not supported')
             return redirect(url_for('post_photo'))
 
 
@@ -219,7 +225,7 @@ def post_photo():
     try:
         username = session['username']
     except:
-        error = 'No session found. Please log in.'
+        error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
     cursor = conn.cursor();
     query = 'SELECT DISTINCT groupName, groupCreator FROM BelongTo WHERE username = %s'
@@ -227,7 +233,69 @@ def post_photo():
     groups = cursor.fetchall()
     cursor.close()
     return render_template('post_photo.html',groups = groups)
+
+@app.route('/manage_tags')
+def manage_tags():
+    try:
+        username = session['username']
+    except:
+        error = 'Cannot find existing session. Please log in.'
+        return render_template('login.html', error=error)
+    data = get_visible(username)
+    return render_template('manage_tags.html', posts=data)
+
+@app.route('/create_tag',methods=['GET', 'POST'])
+def create_tag():
+    try:
+        username = session['username']
+    except:
+        error = 'Cannot find existing session. Please log in.'
+        return render_template('login.html', error=error)
+
+    pID = int(request.form["pID"])
+    target = request.form['target']
+    add_query = 'INSERT INTO Tag VALUES(%s,%s,%s)'
+    visible_query = 'SELECT pID FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 AND pID = %s UNION (SELECT pID FROM Photo JOIN Person ON(poster = Person.username) WHERE pID = %s AND pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))'
+    valid_target_query = 'SELECT * FROM Person WHERE username = %s'
+    #whether the target exist
+    cursor = conn.cursor()
     
+    cursor.execute(valid_target_query, (target))
+    valid_target = cursor.fetchone()
+
+
+    #whether the photo is visible
+
+    cursor.execute(visible_query,(target,pID,pID,target))
+    visible = cursor.fetchone()
+    cursor.close()
+
+
+    
+    if (valid_target):
+        cursor = conn.cursor()
+        #self-tagging, status = 1
+        if target == username:
+            cursor.execute(add_query,(pID,username,1))
+            flash('Tag added!')
+        #tag pending, status = 0
+        elif visible:
+            cursor.execute(add_query,(pID,target,0))
+            flash('Tag request sended,status: pending')
+        #photo is not visible to the target
+        else:
+            flash('Error: Tag failed. The photo is not visible to the user.')
+
+    else:
+        flash('Error: Tag failed. The username does not exist.')
+    conn.commit()
+    cursor.close()
+    data = get_visible(username)
+    return render_template('manage_tags.html', posts=data)
+
+
+
+
 
 @app.route('/select_blogger')
 def select_blogger():
