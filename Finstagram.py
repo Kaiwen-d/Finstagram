@@ -340,23 +340,6 @@ def handle_tag_request():
         
 
 
-@app.route('/select_blogger')
-def select_blogger():
-    #check that user is logged in
-    #username = session['username']
-    #should throw exception if username not found
-    
-    cursor = conn.cursor();
-    query = 'SELECT DISTINCT username FROM blog'
-    cursor.execute(query)
-    data = cursor.fetchall()
-    cursor.close()
-    return render_template('select_blogger.html', user_list=data)
-
-@app.route('/show_posts', methods=["GET", "POST"])
-def show_photo(filePath):
-    
-    return render_template('show_photp.html', filePath = filePath)
 
 @app.route('/logout')
 def logout():
