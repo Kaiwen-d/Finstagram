@@ -293,8 +293,51 @@ def create_tag():
     data = get_visible(username)
     return render_template('manage_tags.html', posts=data)
 
+@app.route('/pending_tags')
+def pending_tags():
+    try:
+        username = session['username']
+    except:
+        error = 'Cannot find existing session. Please log in.'
+        return render_template('login.html', error=error)
 
+    get_tag_query = 'SELECT pID, filePath, firstName, lastName, postingDate FROM (Tag JOIN Photo USING (pID)) JOIN Person ON(Person.username = Photo.poster) WHERE Tag.username = %s AND tagStatus = 0'
+    cursor = conn.cursor()
+    cursor.execute(get_tag_query,(username))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('pending_tags.html', posts=data)
 
+@app.route('/handle_tag_request',methods=['GET', 'POST'])
+def handle_tag_request():
+    try:
+        username = session['username']
+    except:
+        error = 'Cannot find existing session. Please log in.'
+        return render_template('login.html', error=error)
+
+    pID = int(request.form["pID"])
+    action = request.form["action"]
+
+    get_tag_query = 'SELECT pID, filePath, firstName, lastName, postingDate FROM (Tag JOIN Photo USING (pID)) JOIN Person ON(Person.username = Photo.poster) WHERE Tag.username = %s AND tagStatus = 0'
+    accept_query = 'UPDATE Tag SET tagStatus = 1 WHERE username = %s AND pID = %s'
+    decline_query = 'DELETE FROM Tag WHERE username = %s AND pID = %s'
+
+    cursor = conn.cursor()
+    if action == "Accept":
+        cursor.execute(accept_query,(username,pID))
+        flash('Tag request accepted!')
+    elif action =="Decline":
+        cursor.execute(decline_query,(username,pID))
+        flash('Tag request declined!')
+
+    conn.commit()
+    cursor.execute(get_tag_query,(username))
+    data = cursor.fetchall()
+    cursor.close()
+
+    return render_template('pending_tags.html', posts=data)
+        
 
 
 @app.route('/select_blogger')

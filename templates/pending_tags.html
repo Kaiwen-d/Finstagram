@@ -3,14 +3,14 @@
 </head>
 <body>
 
-<h1>Manage Tags</h1>
+<h1>Pending Tags</h1>
 <style type="text/css">
 	table, th, td{
 		border: 1px solid black;
 	}
 </style>
 
-Here are the photos shared with you:
+Here are the tag requests by other users:
 
 <table>
 	<th>pID</th>
@@ -31,7 +31,7 @@ Here are the photos shared with you:
 </table>
 
 <h2>Tag a photo</h2>
-<form action="/create_tag" enctype="multipart/form-data" method="POST">
+<form action="/handle_tag_request" enctype="multipart/form-data" method="POST">
 	Photo ID
 	<select name = "pID">
 		{% for line in posts %}
@@ -39,14 +39,18 @@ Here are the photos shared with you:
 	 	{% endfor %}
 	</select>
 	</br>
-	Who do you want to tag the photo with?
-	<input type="text" name = "target" placeholder="username" /> </br>
+	Action
+	<select name = "action">
+		<option value = 'Accept' />Accept</option>
+		<option value = 'Decline' />Decline</option>
+	</select>
+	</br>
 	<input type="submit" value = Submit />
 </form>
 
-<a href="/pending_tags">Pending Tags</a>
+<a href="/home">Home</a>
 </br>
-<a href="/home">Goback</a>
+<a href="/manage_tag">Goback</a>
 </br>
 {% for message in get_flashed_messages() %}
         {{ message }}
