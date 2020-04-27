@@ -1,0 +1,63 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Welcome {{username}}</h1> 
+<h1>Search for a person to request a follow</h1> 
+<form action="/RequestFollow" method="POST">	
+	<input type="text" name = "followname" placeholder="Search your friend" required/> </br>
+	<input type="submit" value = 'Request a Follow' />
+</form>
+
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+
+</style>
+
+<h1>Search for a person to unfollow</h1> 
+<form action="/unfollow" method="POST">	
+	<input type="text" name = "followname" placeholder="Search your friend" required/> </br>
+	<input type="submit" value = 'Unfollow' />
+</form>
+
+<h1>Type a person to accept or reject the requrest</h1>
+
+<form action="/AcceptOrReject" method="POST">
+	<input type="text" name = "AcceptOrReject" placeholder="Type a follower you want to accpet or reject" required/> </br>
+	<input type="submit" name = Accept value = 'Accpet' />
+	<input type="submit" name = Reject value = 'Reject' />
+
+</form>
+
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+
+</style>
+
+
+#Here are your list of request
+<form action='/Requestlist' method='GET'>
+<table>
+	<th>Pending Request</th>
+
+{% for line in Request %}
+	<tr>
+		<td>{{line.follower}}</td>
+	</tr>
+	
+{% endfor %}
+
+</table>
+</form>
+
+</br>
+<a href='/home'>Go back to homepage</a>
+
+
+</body>
+
+
+</html>
+
