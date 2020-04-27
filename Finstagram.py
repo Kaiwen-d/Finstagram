@@ -31,7 +31,7 @@ conn = pymysql.connect(host='localhost',
                        port = 8889,
                        user='root',
                        password='root',
-                       db='dbproject',
+                       db='Finstagram',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -161,11 +161,6 @@ def createAuth():
         conn.commit()
         cursor.close()
         return redirect(url_for('home'))
-
-
-
-
-
 
         
 @app.route('/post', methods=['GET', 'POST'])
@@ -338,6 +333,155 @@ def handle_tag_request():
 
     return render_template('pending_tags.html', posts=data)
         
+
+#---------------------Yi Zheng update: Manage Follow function------------------------------------
+
+@app.route('/ManageFollow', methods=['GET', 'POST'])
+def ManageFollow():
+    username = session['username']
+    cursor = conn.cursor()
+    query = 'SELECT follower FROM Follow WHERE followee = %s AND followStatus = %s'
+    cursor.execute(query, (username, 0))
+    data = cursor.fetchall()
+    return render_template('ManageFollow.html',username=username, Request=data)
+
+@app.route('/AcceptOrReject', methods=['POST'])
+def AcceptOrReject():
+    print(0)
+    username = session['username']
+    cursor = conn.cursor()
+    AcceptOrReject = request.form['AcceptOrReject']
+    Accept = None
+    Reject = None
+    try:
+        Accept = request.form['Accept']
+    except:
+        Reject = request.form['Reject']
+
+    if Accept:
+        query = 'UPDATE Follow SET followStatus = %s WHERE follower = %s AND followee = %s'
+        cursor.execute(query, (1, AcceptOrReject, username))
+        cursor.close()
+        return render_template('ManageFollow.html')
+    if Reject:
+        query = 'DELETE FROM Follow WHERE followee = %s AND follower = %s'
+        cursor.execute(query,(username, AcceptOrReject))
+        cursor.close()
+        return render_template('ManageFollow.html')
+
+@app.route('/RequestFollow', methods=['GET', 'POST'])
+def RequestFollow():
+    username = session['username']
+    cursor = conn.cursor()
+    followee = request.form['followname']
+
+    if username == followee:
+        error = 'You cannot follow yourself'
+        return render_template('ManageFollow.html', error=error)
+
+    #check whether followee has been followed
+
+    query = 'SELECT username FROM Person WHERE username = %s'
+    cursor.execute(query,(followee))
+    data1 = cursor.fetchone()
+    #If this person not in the database
+    if not data1:
+        error = 'This guy is not registered'
+        return render_template('ManageFollow.html')
+
+    query = 'SELECT followee FROM Follow WHERE follower = %s AND followee = %s'
+    cursor.execute(query, (username, followee))
+    data2 = cursor.fetchone()
+
+    if data2: # check if has sent a request
+        error = "You have followed this person or your request is pending."
+        cursor.close()
+        return render_template('ManageFollow.html', error=error)
+    else: #sent a requset
+        query = 'INSERT INTO Follow(follower, followee, followStatus) VALUES (%s, %s, %s)'
+        cursor.execute(query,(username, followee, 0))
+        conn.commit()
+        cursor.close()
+        message = 'Your request has been sent.'
+        return render_template('ManageFollow.html', message=message)
+
+@app.route('/Unfollow', methods=['GET', 'POST'])
+def Unfollow():
+    username = session['username']
+    cursor = conn.cursor()
+    followee = request.form['followname']
+
+    #Check whether this guy is being followed
+    query = 'SELECT followee FROM Follow WHERE follower = %s AND followee = %s'
+    cursor.execute(query, (username, followee))
+    data1 = cursor.fetchone()
+    # If this person not in the database
+    if username == followee:
+        error = 'You cannot unfollow yourself'
+        return render_template('ManageFollow.html', error=error)
+    if data1:
+        error = 'You are not following this person please try another name'
+        return render_template('ManageFollow.html')
+    query = 'DELETE FROM Follow WHERE follower = %s AND followee = %s'
+    cursor.execute(query, (username, followee))
+    conn.commit()
+    cursor.close()
+    message = 'Your request has been sent.'
+    return render_template('ManageFollow.html', message=message)
+
+
+
+@app.route('/AddFriend', methods=['GET', 'POST'])
+def AddFriend():
+    return render_template('AddFriend.html')
+
+@app.route('/Add_or_Delete', methods=['GET', 'POST'])
+def Add_or_Delete():
+    username = session['username']
+    groupname = request.form['groupname']
+    friendname = request.form['friendname']
+    Add = None
+    Delete = None
+    try:
+        Add = request.form['Add']
+    except:
+        Delete = request.form['Delete']
+    cursor = conn.cursor()
+    #check whether friend is already in the friendgroup
+    query = 'SELECT username FROM BelongTo WHERE username = %s'
+    cursor.execute(query, (friendname))
+    data = cursor.fetchone()
+
+    if Add:
+        if data:
+            print('Your friend is already in the group')
+            cursor.close()
+            return render_template('AddFriend.html')
+        else:
+            query = 'INSERT INTO BelongTo (username, groupName, groupCreator) VALUES (%s, %s, %s)'
+            print(1)
+            cursor.execute(query, (friendname, groupname, username))
+            conn.commit()
+            cursor.close()
+            message = "You has successfully add a friend."
+            return render_template('AddFriend.html', message= message)
+    if Delete:
+        if data:
+            query = 'DELETE FROM BelongTo WHERE groupName = %s AND groupCreator = %s AND username = %s'
+            cursor.execute(query,(groupname, username, friendname))
+            cursor.close()
+            print(str(friendname) + " has been successfully deleted.")
+            return render_template('AddFriend.html')
+        else:
+            error = friendname + " is not in the friendgroup."
+            cursor.close()
+            return render_template('AddFriend.html', error = error)
+
+
+
+#------------------------------------Yi Zheng update end---------------------------------
+
+
 
 
 
