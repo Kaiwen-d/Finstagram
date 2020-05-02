@@ -16,12 +16,12 @@
 </style>
 
 <h1>Search for a person to unfollow</h1> 
-<form action="/unfollow" method="POST">	
+<form action="/Unfollow" method="POST">	
 	<input type="text" name = "followname" placeholder="Search your friend" required/> </br>
 	<input type="submit" value = 'Unfollow' />
 </form>
 
-<h1>Type a person to accept or reject the requrest</h1>
+<h1>Type a person to accept or reject the request</h1>
 
 <form action="/AcceptOrReject" method="POST">
 	<input type="text" name = "AcceptOrReject" placeholder="Type a follower you want to accpet or reject" required/> </br>
@@ -51,7 +51,12 @@
 
 </table>
 </form>
-
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+	{% if message %}
+		<p class="message"><strong>Message:</strong> {{message}}</p>
+	{% endif %}
 </br>
 <a href='/home'>Go back to homepage</a>
 

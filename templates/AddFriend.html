@@ -21,6 +21,13 @@
 		border: 1px solid black;
 	}
 </style>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+	{% if message %}
+		<p class="message"><strong>Message:</strong> {{message}}</p>
+	{% endif %}
+
 
 <a href="/home">Go back to homepage</a>
 
