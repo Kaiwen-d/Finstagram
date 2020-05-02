@@ -31,7 +31,7 @@ conn = pymysql.connect(host='localhost',
                        port = 8889,
                        user='root',
                        password='root',
-                       db='dbproject',
+                       db='Finstagram',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -191,7 +191,7 @@ def post():
             cursor.execute(photo_query, (all_followers, caption, username))
 
             #rename file as pID and upload filrpath
-            extension = filename.rsplit('.', 1)[1].lower()
+            extension = file.filename.rsplit('.', 1)[1].lower()
 
             get_ID = 'SELECT LAST_INSERT_ID() AS pID FROM Photo'
             cursor.execute(get_ID)
@@ -347,29 +347,31 @@ def ManageFollow():
     data = cursor.fetchall()
     return render_template('ManageFollow.html',username=username, Request=data)
 
-@app.route('/AcceptOrReject', methods=['POST'])
+@app.route('/AcceptOrReject', methods=['GET','POST'])
 def AcceptOrReject():
-    print(0)
-    username = session['username']
+    username = session['username'] #followee
     cursor = conn.cursor()
-    AcceptOrReject = request.form['AcceptOrReject']
+    follower= request.form['AcceptOrReject'] #follower
     Accept = None
     Reject = None
     try:
         Accept = request.form['Accept']
     except:
         Reject = request.form['Reject']
-
     if Accept:
-        query = 'UPDATE Follow SET followStatus = %s WHERE follower = %s AND followee = %s'
-        cursor.execute(query, (1, AcceptOrReject, username))
+        query = 'UPDATE Follow SET followStatus = %s WHERE followee = %s AND follower = %s'
+        cursor.execute(query, (1, username, follower))
+        conn.commit()
         cursor.close()
         return render_template('ManageFollow.html')
     if Reject:
         query = 'DELETE FROM Follow WHERE followee = %s AND follower = %s'
-        cursor.execute(query,(username, AcceptOrReject))
+        cursor.execute(query,(username, follower))
         cursor.close()
         return render_template('ManageFollow.html')
+
+    error = 'Error'
+    return render_template('ManageFollow.html', error=error)
 
 @app.route('/RequestFollow', methods=['GET', 'POST'])
 def RequestFollow():
@@ -389,7 +391,7 @@ def RequestFollow():
     #If this person not in the database
     if not data1:
         error = 'This guy is not registered'
-        return render_template('ManageFollow.html')
+        return render_template('ManageFollow.html', error=error)
 
     query = 'SELECT followee FROM Follow WHERE follower = %s AND followee = %s'
     cursor.execute(query, (username, followee))
@@ -421,14 +423,15 @@ def Unfollow():
     if username == followee:
         error = 'You cannot unfollow yourself'
         return render_template('ManageFollow.html', error=error)
-    if data1:
+    if not data1:
         error = 'You are not following this person please try another name'
-        return render_template('ManageFollow.html')
+        return render_template('ManageFollow.html', error=error)
     query = 'DELETE FROM Follow WHERE follower = %s AND followee = %s'
     cursor.execute(query, (username, followee))
+    print(1)
     conn.commit()
     cursor.close()
-    message = 'Your request has been sent.'
+    message = 'You have unfollowed ' + followee + '.'
     return render_template('ManageFollow.html', message=message)
 
 
@@ -454,11 +457,13 @@ def Add_or_Delete():
     cursor.execute(query, (friendname))
     data = cursor.fetchone()
 
+    error = None
     if Add:
         if data:
-            print('Your friend is already in the group')
+            print(1)
+            error = 'Your friend is already in the group'
             cursor.close()
-            return render_template('AddFriend.html')
+            return render_template('AddFriend.html', error=error)
         else:
             query = 'INSERT INTO BelongTo (username, groupName, groupCreator) VALUES (%s, %s, %s)'
             print(1)
@@ -471,9 +476,9 @@ def Add_or_Delete():
         if data:
             query = 'DELETE FROM BelongTo WHERE groupName = %s AND groupCreator = %s AND username = %s'
             cursor.execute(query,(groupname, username, friendname))
+            message = "Your friend has been deleted"
             cursor.close()
-            print(str(friendname) + " has been successfully deleted.")
-            return render_template('AddFriend.html')
+            return render_template('AddFriend.html', message=message)
         else:
             error = friendname + " is not in the friendgroup."
             cursor.close()
