@@ -8,10 +8,10 @@ Post your photo
 
 <form action="/post" enctype="multipart/form-data" method="POST">
 	
-	<input type="file" name = "file" style="margin-top:20px;"/> </br>
+	<input type="file" name = "file" style="margin-top:20px;" required /> </br>
 	<input type="text" name = "caption" placeholder="caption" > </br>
 Visible to all followers </br>
-	<input type="radio" name = "all_followers" value = "1"/>Yes </br>
+	<input type="radio" name = "all_followers" value = "1" required />Yes </br>
 	<input type="radio" name = "all_followers" value = "0"/>No </br>
 	Choose the friend group(s) you want to share with.</br>
 

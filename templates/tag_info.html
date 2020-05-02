@@ -1,0 +1,37 @@
+<html>
+<head>
+</head>
+<body>
+
+<h1>Here are the people who have been tagged in photo {{pID}}</h1> 
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+
+<table>
+	<th>username</th>
+	<th>taggee's first name</th>
+	<th>taggee's last name</th>
+
+{% for line in posts %}
+	<tr>
+		<td>{{line.username}}</td>
+		<td>{{line.firstName}}</td>
+		<td>{{line.lastName}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+
+
+
+<a href="/home">Go back</a>
+
+
+</body>
+
+
+</html>

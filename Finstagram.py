@@ -31,7 +31,7 @@ conn = pymysql.connect(host='localhost',
                        port = 8889,
                        user='root',
                        password='root',
-                       db='Finstagram',
+                       db='dbproject',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -121,6 +121,38 @@ def home():
     data = get_visible(username)
     return render_template('home.html', username=username, posts=data)
 
+@app.route('/tag_info/<pID>')
+def tag_info(pID):
+    try:
+        username = session['username']
+    except:
+        error = 'Cannot find existing session. Please log in.'
+
+    query = 'SELECT username, firstName,lastName FROM Tag NATURAL JOIN Person WHERE pID = %s'
+
+    cursor = conn.cursor()
+    cursor.execute(query,(int(pID)))
+    data = cursor.fetchall()
+    cursor.close()
+
+    return render_template('tag_info.html',pID = pID, posts = data)
+
+@app.route('/react_info/<pID>')
+def react_info(pID):
+    try:
+        username = session['username']
+    except:
+        error = 'Cannot find existing session. Please log in.'
+
+    query = 'SELECT username, comment, emoji FROM ReactTo WHERE pID = %s'
+
+    cursor = conn.cursor()
+    cursor.execute(query,(int(pID)))
+    data = cursor.fetchall()
+    cursor.close()
+
+    return render_template('react_info.html',pID = pID, posts = data)
+
 @app.route('/createGroup')
 def create_group():
     try:
@@ -171,10 +203,12 @@ def post():
         error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
     if request.method == 'POST':
+        
         file = request.files['file']
         caption = request.form['caption']
         shared_groups = request.form.getlist('shared_groups')
         all_followers = int(request.form['all_followers'])
+
 
         if file and allowed_file(file.filename):
             # save photo to a dedicated folder
@@ -249,10 +283,14 @@ def create_tag():
         error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
 
+    
     pID = int(request.form["pID"])
     target = request.form['target']
+
+
+
     add_query = 'INSERT INTO Tag VALUES(%s,%s,%s)'
-    visible_query = 'SELECT pID FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 AND pID = %s UNION (SELECT pID FROM Photo JOIN Person ON(poster = Person.username) WHERE pID = %s AND pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))'
+    visible_query = 'SELECT pID FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 AND pID = %s UNION (SELECT pID FROM Photo JOIN Person ON(poster = Person.username) WHERE pID = %s AND pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))UNION(SELECT pID FROM Photo JOIN Person ON(poster = Person.username) WHERE poster = %s)'
     valid_target_query = 'SELECT * FROM Person WHERE username = %s'
     #whether the target exist
     cursor = conn.cursor()
@@ -263,7 +301,7 @@ def create_tag():
 
     #whether the photo is visible
 
-    cursor.execute(visible_query,(target,pID,pID,target))
+    cursor.execute(visible_query,(target,pID,pID,target,target))
     visible = cursor.fetchone()
     cursor.close()
 
@@ -312,9 +350,10 @@ def handle_tag_request():
     except:
         error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
-
+    
     pID = int(request.form["pID"])
-    action = request.form["action"]
+    
+
 
     get_tag_query = 'SELECT pID, filePath, firstName, lastName, postingDate FROM (Tag JOIN Photo USING (pID)) JOIN Person ON(Person.username = Photo.poster) WHERE Tag.username = %s AND tagStatus = 0'
     accept_query = 'UPDATE Tag SET tagStatus = 1 WHERE username = %s AND pID = %s'
