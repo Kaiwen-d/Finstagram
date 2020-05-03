@@ -18,6 +18,8 @@ Here are the photos shared with you:
 	<th>poster's first name</th>
 	<th>poster's last name</th>
 	<th>link</th>
+	<th>tag Info</th>
+	<th>reaction Info</th>
 
 {% for line in posts %}
 	<tr>
@@ -25,7 +27,9 @@ Here are the photos shared with you:
 		<td>{{line.postingDate}}</td>
 		<td>{{line.firstName}}</td>
 		<td>{{line.lastName}}</td>
-		<td><a href = "/static/images/{{line.filePath}}" target="_blank"> LINK</td>
+		<td><a href = "/static/images/{{line.filePath}}" target="_blank"> LINK</a></td>
+		<td><a href = "/tag_info/{{line.pID}}"> Tag Info</a></td>
+		<td><a href = "/react_info/{{line.pID}}"> Reaction Info</a></td>
 	</tr>
 {% endfor %}
 </table>

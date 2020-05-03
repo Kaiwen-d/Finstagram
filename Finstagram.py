@@ -8,19 +8,7 @@ SALT = 'cs3083'
 ALLOWED_EXTENSIONS = set(['png','jpg','jpeg','gif','bmp'])
 
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_visible(username):
-    cursor = conn.cursor();
-
-    # query = 'SELECT  postingDate, pID, firstName,lastName,filePath FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster)WHERE(ph.poster = %s)OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1)) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID))) ORDER BY postingDate DESC'
-    query = 'SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 UNION (SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s)) UNION(SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE poster = %s)ORDER BY postingDate DESC'
-    cursor.execute(query, (username, username, username))
-
-    data = cursor.fetchall()
-    cursor.close()
-    return data
 
 
 #Initialize the app from Flask
@@ -35,11 +23,25 @@ conn = pymysql.connect(host='localhost',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
+#check file type
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+#get visible photos
+def get_visible(username):
+    cursor = conn.cursor();
+
+    query = 'SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 UNION (SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s)) UNION(SELECT postingDate, pID, firstName,lastName,filePath FROM Photo JOIN Person ON(poster = Person.username) WHERE poster = %s)ORDER BY postingDate DESC'
+    cursor.execute(query, (username, username, username))
+
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
 #Define a route to hello function
 @app.route('/')
 def hello():
     return render_template('index.html')
-    # return 'hello world'
 
 #Define route for login
 @app.route('/login')
@@ -110,7 +112,7 @@ def registerAuth():
         cursor.close()
         return render_template('index.html')
 
-
+#route for homepage
 @app.route('/home')
 def home():
     try:
@@ -120,7 +122,7 @@ def home():
         return render_template('login.html', error=error)
     data = get_visible(username)
     return render_template('home.html', username=username, posts=data)
-
+#route for tag information
 @app.route('/tag_info/<pID>')
 def tag_info(pID):
     try:
@@ -128,7 +130,7 @@ def tag_info(pID):
     except:
         error = 'Cannot find existing session. Please log in.'
 
-    query = 'SELECT username, firstName,lastName FROM Tag NATURAL JOIN Person WHERE pID = %s'
+    query = 'SELECT username, firstName,lastName FROM Tag NATURAL JOIN Person WHERE pID = %s AND tagStatus = 1'
 
     cursor = conn.cursor()
     cursor.execute(query,(int(pID)))
@@ -137,6 +139,7 @@ def tag_info(pID):
 
     return render_template('tag_info.html',pID = pID, posts = data)
 
+#route for reaction info
 @app.route('/react_info/<pID>')
 def react_info(pID):
     try:
@@ -153,6 +156,7 @@ def react_info(pID):
 
     return render_template('react_info.html',pID = pID, posts = data)
 
+#route for create group
 @app.route('/createGroup')
 def create_group():
     try:
@@ -194,7 +198,7 @@ def createAuth():
         cursor.close()
         return redirect(url_for('home'))
 
-        
+#route for post photo
 @app.route('/post', methods=['GET', 'POST'])
 def post():
     try:
@@ -265,6 +269,7 @@ def post_photo():
     cursor.close()
     return render_template('post_photo.html',groups = groups)
 
+#route for manage tags
 @app.route('/manage_tags')
 def manage_tags():
     try:
@@ -275,6 +280,7 @@ def manage_tags():
     data = get_visible(username)
     return render_template('manage_tags.html', posts=data)
 
+#route for create tag request
 @app.route('/create_tag',methods=['GET', 'POST'])
 def create_tag():
     try:
@@ -328,6 +334,7 @@ def create_tag():
     data = get_visible(username)
     return render_template('manage_tags.html', posts=data)
 
+#handle pending tags
 @app.route('/pending_tags')
 def pending_tags():
     try:
