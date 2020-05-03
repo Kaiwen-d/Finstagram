@@ -352,7 +352,7 @@ def handle_tag_request():
         return render_template('login.html', error=error)
     
     pID = int(request.form["pID"])
-    
+    action = request.form["action"]
 
 
     get_tag_query = 'SELECT pID, filePath, firstName, lastName, postingDate FROM (Tag JOIN Photo USING (pID)) JOIN Person ON(Person.username = Photo.poster) WHERE Tag.username = %s AND tagStatus = 0'
