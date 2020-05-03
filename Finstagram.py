@@ -528,6 +528,63 @@ def Add_or_Delete():
 #------------------------------------Yi Zheng update end---------------------------------
 
 
+# search by tag
+@app.route('/search_by_tag')
+def search_by_tag():
+    return render_template('search_by_tag.html')
+
+
+@app.route('/search_by_tag_auth', methods=['GET', 'POST'])
+def search_by_tag_auth():
+    user = session['username']
+    tag = request.form['tag']
+    cursor = conn.cursor();
+
+    query = '''SELECT DISTINCT postingDate, ph.pID, firstName,lastName,filePath FROM (Photo AS ph JOIN Person AS p ON(p.username = ph.poster)) JOIN Tag AS t USING(pID) WHERE(ph.poster = %s AND t.username = %s) OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1) AND t.username = %s) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID)) AND t.username = %s) ORDER BY postingDate DESC'''
+
+    cursor.execute(query, (user, tag, user, tag, user, tag))
+
+    data = cursor.fetchall()
+    # print(data)
+    cursor.close()
+    error = None
+    if (data):
+        return render_template('search_results_tag.html', username=user, tag=tag, posts=data)
+    else:
+        # returns an error message to the html page
+        error = 'Invalid search'
+        return render_template('search_by_tag.html', error=error)
+
+
+# search by poster
+@app.route('/search_by_poster')
+def search_by_poster():
+    return render_template('search_by_poster.html')
+
+
+@app.route('/search_by_poster_auth', methods=['GET', 'POST'])
+def search_by_poster_auth():
+    user = session['username']
+    poster = request.form['poster']
+    cursor = conn.cursor();
+
+    query = '''
+    SELECT postingDate, pID, firstName, lastName, filePath, poster FROM Photo AS ph JOIN Person AS p ON(p.username = ph.poster) WHERE (ph.poster = %s AND ph.poster = %s) OR (allFollowers = 1 AND %s IN (SELECT follower FROM Follow WHERE followee = ph.poster AND followStatus = 1) AND ph.poster = %s) OR (allFollowers = 0 AND %s IN (SELECT username FROM BelongTo WHERE (groupName, groupCreator) IN (SELECT groupName, groupCreator FROM SharedWith WHERE pID = ph.pID)) AND ph.poster = %s) ORDER BY postingDate DESC
+    '''
+
+    cursor.execute(query, (user, poster, user, poster, user, poster))
+
+    data = cursor.fetchall()
+    # print(data)
+    cursor.close()
+    error = None
+    if (data):
+        return render_template('search_results_poster.html', username=user, poster=poster, posts=data)
+    else:
+        # returns an error message to the html page
+        error = 'Invalid search'
+        return render_template('search_by_poster.html', error=error)
+
 
 
 

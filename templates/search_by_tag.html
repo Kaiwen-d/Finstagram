@@ -1,0 +1,18 @@
+<html>
+<head>
+</head>
+<body>
+<form action="/search_by_tag_auth" method="POST">
+	<input type="text" name = "tag" placeholder="tagged username" required/></br>
+	<input type="submit" value = Search />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+
+<a href="/home">Go back</a>
+
+</body>
+
+
+</html>
