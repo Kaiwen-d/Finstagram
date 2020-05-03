@@ -31,7 +31,7 @@ conn = pymysql.connect(host='localhost',
                        port = 8889,
                        user='root',
                        password='root',
-                       db='dbproject',
+                       db='Finstagram',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -406,6 +406,7 @@ def AcceptOrReject():
     if Reject:
         query = 'DELETE FROM Follow WHERE followee = %s AND follower = %s'
         cursor.execute(query,(username, follower))
+        conn.commit()
         cursor.close()
         return render_template('ManageFollow.html')
 
@@ -491,6 +492,24 @@ def Add_or_Delete():
     except:
         Delete = request.form['Delete']
     cursor = conn.cursor()
+
+    #check the existence of friendgroup and user
+    #check the existence of the friendgroup
+    query = 'SELECT * FROM FriendGroup WHERE groupName = %s AND groupCreator = %s'
+    cursor.execute(query, (groupname, username))
+    data = cursor.fetchone()
+    if not data:
+        error = "This friendgroup doesn't exist."
+        return render_template('AddFriend.html', error=error)
+    #check the existence of the user
+    query = 'SELECT * FROM Person WHERE username=%s'
+    cursor.execute(query, (friendname))
+    data = cursor.fetchone()
+    if not data:
+        error = "This user doesn't exist."
+        return render_template('AddFriend.html', error=error)
+
+
     #check whether friend is already in the friendgroup
     query = 'SELECT username FROM BelongTo WHERE username = %s'
     cursor.execute(query, (friendname))
