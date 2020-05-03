@@ -170,17 +170,17 @@ def createAuth():
     except:
         error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
-
+    #get user input from from
     groupName = request.form['groupName']
     description = request.form['description']
-    #start curosr
+
     cursor = conn.cursor()
     query = 'SELECT * FROM FriendGroup WHERE groupName = %s AND groupCreator = %s'
     cursor.execute(query, (groupName,username))
     data = cursor.fetchone()
     error = None
     if(data):
-        #If the previous query returns data, then user exists
+        #If the previous query returns data, then the group has already been created
         error = "This group already exists"
         return render_template('create_group.html', error = error)
     else:
@@ -203,13 +203,13 @@ def post():
         error = 'Cannot find existing session. Please log in.'
         return render_template('login.html', error=error)
     if request.method == 'POST':
-        
+        #get user input from the webpage
         file = request.files['file']
         caption = request.form['caption']
         shared_groups = request.form.getlist('shared_groups')
         all_followers = int(request.form['all_followers'])
 
-
+        #check whether the file type is photo
         if file and allowed_file(file.filename):
             # save photo to a dedicated folder
             basepath = os.path.dirname(__file__)
@@ -247,7 +247,7 @@ def post():
             cursor.close()
             return redirect(url_for('home'))
         else:
-            flash('Error: No file or filr type not supported')
+            flash('Error: No file or the file type is not supported')
             return redirect(url_for('post_photo'))
 
 
@@ -299,7 +299,7 @@ def create_tag():
     valid_target = cursor.fetchone()
 
 
-    #whether the photo is visible
+    #whether the photo is visible to the target
 
     cursor.execute(visible_query,(target,pID,pID,target,target))
     visible = cursor.fetchone()
@@ -320,7 +320,7 @@ def create_tag():
         #photo is not visible to the target
         else:
             flash('Error: Tag failed. The photo is not visible to the user.')
-
+    #target does not exist
     else:
         flash('Error: Tag failed. The username does not exist.')
     conn.commit()
