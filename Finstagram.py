@@ -293,7 +293,15 @@ def create_tag():
     pID = int(request.form["pID"])
     target = request.form['target']
 
-
+#see whether the tag request already exists (to avoid violating primary key restriction)
+    exist_query = 'SELECT * FROM Tag WHERE pID = %s AND username = %s'
+    cursor = conn.cursor()
+    cursor.execute(exist_query,(pID,target))
+    exist = cursor.fetchone()
+    if exist:
+        data = get_visible(username)
+        flash('This user has already beem tagged')
+        return render_template('manage_tags.html', posts=data)
 
     add_query = 'INSERT INTO Tag VALUES(%s,%s,%s)'
     visible_query = 'SELECT pID FROM Photo JOIN Follow ON(poster = followee) JOIN Person ON(poster = username) WHERE follower = %s AND allFollowers = 1 AND followStatus = 1 AND pID = %s UNION (SELECT pID FROM Photo JOIN Person ON(poster = Person.username) WHERE pID = %s AND pID IN (SELECT pID FROM SharedWith NATURAL JOIN BelongTo WHERE username = %s))UNION(SELECT pID FROM Photo JOIN Person ON(poster = Person.username) WHERE poster = %s)'
